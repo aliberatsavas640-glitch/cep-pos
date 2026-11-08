@@ -158,7 +158,7 @@ function show(id,push){var c=document.querySelector('.scr.on');if(c)c.classList.
 function back(){if(st.ctrl){try{st.ctrl.abort()}catch(e){}st.ctrl=null}st.stack.pop();show(st.stack[st.stack.length-1]||'home',false)}
 function home(){st.stack=['home'];show('home',false)}
 var NFC=null;
-try{if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())NFC=Capacitor.registerPlugin('Nfc')}catch(e){}
+try{if(window.Capacitor&&Capacitor.registerPlugin)NFC=Capacitor.registerPlugin('Nfc')}catch(e){}
 var hasNFC=!!NFC||('NDEFReader' in window);
 if(NFC){
  NFC.addListener('tag',function(t){if(!$('scan').classList.contains('on'))return;process({type:'nfc',bal:t.balance||0,found:!!t.found})});
@@ -169,7 +169,7 @@ function nativeScan(){
  st.ctrl={abort:stopNfc};
  NFC.start().catch(function(e){var m=(e&&e.message)||'';$('scanS').textContent=m.indexOf('KAPALI')>-1?'NFC kapalı. Ayarlardan NFC\'yi aç.':'NFC başlatılamadı.';toast('NFC açılamadı')});
 }
-$('nfcState').textContent=hasNFC?'NFC hazır':'NFC yok · demo';
+$('nfcState').textContent=NFC?'NFC hazır · yerel':(hasNFC?'Web NFC':'NFC yok · demo');
 
 document.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){show(b.dataset.go)}});
 document.querySelectorAll('[data-back]').forEach(function(b){b.onclick=back});
@@ -211,7 +211,7 @@ function startScan(){
     try{ev.message.records.forEach(function(rec){if(rec.recordType==='text'){var t=new TextDecoder(rec.encoding||'utf-8').decode(rec.data);if(t.indexOf('CEPPOS:')===0){bal=parseInt(t.slice(7),10)||0;found=true}}})}catch(e){}
     try{st.ctrl.abort()}catch(e){};st.ctrl=null;
     process({type:'nfc',bal:bal,found:found})};
-  }).catch(function(e){$('scanS').textContent='NFC açılamadı. Ayarlardan NFC\'yi aç ve izin ver.';toast('NFC hatası: '+(e.name||'bilinmiyor'))});
+  }).catch(function(e){$('scanS').textContent='Web NFC reddedildi. Capacitor: '+(window.Capacitor?'var':'YOK');toast('NFC hatası: '+(e.name||'bilinmiyor'))});
  }catch(e){$('scanS').textContent='NFC başlatılamadı.'}
 }
 $('virtBtn').onclick=function(){process({type:'virt',bal:getV(),found:true})};
