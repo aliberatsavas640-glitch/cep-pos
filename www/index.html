@@ -158,11 +158,24 @@ function show(id,push){var c=document.querySelector('.scr.on');if(c)c.classList.
 function back(){if(st.ctrl){try{st.ctrl.abort()}catch(e){}st.ctrl=null}st.stack.pop();show(st.stack[st.stack.length-1]||'home',false)}
 function home(){st.stack=['home'];show('home',false)}
 var NFC=null;
-try{if(window.Capacitor&&Capacitor.registerPlugin)NFC=Capacitor.registerPlugin('Nfc')}catch(e){}
+function getPlugin(n){
+ var C=window.Capacitor;if(!C)return null;
+ try{if(C.registerPlugin)return C.registerPlugin(n)}catch(e){}
+ try{if(C.Plugins&&C.Plugins[n])return C.Plugins[n]}catch(e){}
+ if(C.nativePromise&&C.nativeCallback&&window.Proxy){
+  return new Proxy({},{get:function(_,m){
+   if(m==='then')return undefined;
+   if(m==='addListener')return function(ev,cb){C.nativeCallback(n,'addListener',{eventName:ev},cb);return Promise.resolve({remove:function(){}})};
+   return function(o){return C.nativePromise(n,m,o||{})};
+  }});
+ }
+ return null;
+}
+NFC=getPlugin('Nfc');
 var hasNFC=!!NFC||('NDEFReader' in window);
 if(NFC){
  NFC.addListener('tag',function(t){if(!$('scan').classList.contains('on'))return;process({type:'nfc',bal:t.balance||0,found:!!t.found})});
- try{var AP=Capacitor.registerPlugin('App');AP.addListener('backButton',function(){var s=st.stack[st.stack.length-1];if(s==='busy')return;if(s==='home'||s==='lock')AP.exitApp();else if(s==='result')home();else back()})}catch(e){}
+ try{var AP=getPlugin('App');AP.addListener('backButton',function(){var s=st.stack[st.stack.length-1];if(s==='busy')return;if(s==='home'||s==='lock')AP.exitApp();else if(s==='result')home();else back()})}catch(e){}
 }
 function stopNfc(){try{if(NFC)NFC.stop()}catch(e){}}
 function nativeScan(){
@@ -211,7 +224,7 @@ function startScan(){
     try{ev.message.records.forEach(function(rec){if(rec.recordType==='text'){var t=new TextDecoder(rec.encoding||'utf-8').decode(rec.data);if(t.indexOf('CEPPOS:')===0){bal=parseInt(t.slice(7),10)||0;found=true}}})}catch(e){}
     try{st.ctrl.abort()}catch(e){};st.ctrl=null;
     process({type:'nfc',bal:bal,found:found})};
-  }).catch(function(e){$('scanS').textContent='Web NFC reddedildi. Capacitor: '+(window.Capacitor?'var':'YOK');toast('NFC hatası: '+(e.name||'bilinmiyor'))});
+  }).catch(function(e){$('scanS').textContent='Web NFC reddedildi. Capacitor: '+(window.Capacitor?'var, nativePromise: '+typeof Capacitor.nativePromise+', registerPlugin: '+typeof Capacitor.registerPlugin:'YOK');toast('NFC hatası: '+(e.name||'bilinmiyor'))});
  }catch(e){$('scanS').textContent='NFC başlatılamadı.'}
 }
 $('virtBtn').onclick=function(){process({type:'virt',bal:getV(),found:true})};
