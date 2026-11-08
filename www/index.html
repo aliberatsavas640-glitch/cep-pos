@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Cep POS</title>
+<style>
+:root{--bg:#fff;--fg:#0a0a0a;--mute:#8a8a8a;--card:#f2f2f2;--line:#e4e4e4;--ok:#16a34a;--no:#dc2626;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--fg:#fff;--mute:#8a8a8a;--card:#161616;--line:#262626}}
+:root[data-theme="dark"]{--bg:#000;--fg:#fff;--mute:#8a8a8a;--card:#161616;--line:#262626}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+#app{height:100%;max-width:480px;margin:0 auto;position:relative}
+.scr{position:absolute;inset:0;display:none;flex-direction:column;padding:20px 22px 22px;animation:in .28s ease}
+.scr.on{display:flex}
+@keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.top{display:flex;align-items:center;justify-content:space-between;min-height:44px;margin-bottom:10px}
+.back{width:42px;height:42px;border-radius:50%;background:var(--card);border:0;color:var(--fg);font-size:20px;cursor:pointer}
+.brand{font-weight:800;letter-spacing:-.5px;font-size:20px}
+.pill{font-size:12px;color:var(--mute);border:1px solid var(--line);padding:5px 10px;border-radius:99px}
+h1{font-size:30px;letter-spacing:-1px;margin:8px 0 4px}
+p.sub{color:var(--mute);margin:0 0 22px;font-size:15px}
+.grid{display:grid;gap:12px;flex:1;align-content:start}
+.g2{grid-template-columns:1fr 1fr}
+.big{background:var(--fg);color:var(--bg);border:0;border-radius:26px;padding:26px 22px;text-align:left;font-size:22px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;gap:30px;transition:transform .12s}
+.big.alt{background:var(--card);color:var(--fg)}
+.big small{font-weight:500;font-size:13px;opacity:.6}
+.big svg{width:30px;height:30px}
+.big:active,.key:active,.cta:active{transform:scale(.96)}
+.cat{aspect-ratio:1/1;justify-content:space-between}
+.link{background:none;border:1px solid var(--line);color:var(--fg);border-radius:18px;padding:16px;font-size:16px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.amt{text-align:center;margin:18px 0 8px}
+.amt .lbl{color:var(--mute);font-size:14px}
+.amt .v{font-size:54px;font-weight:800;letter-spacing:-2px;margin-top:6px;white-space:nowrap}
+.amt .v span{font-size:26px;color:var(--mute);margin-left:6px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:auto}
+.key{height:62px;border:0;border-radius:20px;background:var(--card);color:var(--fg);font-size:26px;font-weight:600;cursor:pointer;transition:transform .1s}
+.cta{margin-top:14px;height:60px;border:0;border-radius:20px;background:var(--fg);color:var(--bg);font-size:18px;font-weight:700;cursor:pointer;width:100%;transition:transform .1s}
+.cta.ghost{background:var(--card);color:var(--fg);margin-top:10px;height:52px;font-size:15px}
+.cta:disabled{opacity:.3}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.nfc{position:relative;width:230px;height:230px;display:grid;place-items:center;margin-bottom:28px}
+.nfc i{position:absolute;inset:0;border-radius:50%;border:2px solid var(--fg);opacity:0;animation:ring 2.4s infinite}
+.nfc i:nth-child(2){animation-delay:.8s}.nfc i:nth-child(3){animation-delay:1.6s}
+@keyframes ring{0%{transform:scale(.35);opacity:.7}100%{transform:scale(1);opacity:0}}
+.phone{width:92px;height:150px;border:3px solid var(--fg);border-radius:20px;position:relative;animation:tap 2.4s ease-in-out infinite}
+.phone:after{content:"";position:absolute;left:50%;top:9px;width:24px;height:4px;border-radius:9px;background:var(--fg);transform:translateX(-50%)}
+.cardi{position:absolute;width:110px;height:70px;border-radius:12px;background:var(--fg);right:-48px;bottom:-14px;opacity:.9;animation:cd 2.4s ease-in-out infinite;display:grid;place-items:center}
+.cardi svg{width:28px;height:28px;stroke:var(--bg)}
+@keyframes cd{0%,100%{transform:translate(30px,10px) rotate(8deg)}50%{transform:translate(-30px,-6px) rotate(-4deg)}}
+@keyframes tap{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.spin{width:78px;height:78px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--fg);animation:sp 0.8s linear infinite;margin-bottom:26px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.t1{font-size:26px;font-weight:800;letter-spacing:-.5px;margin:0 0 6px}
+.t2{color:var(--mute);margin:0;font-size:15px;max-width:290px;line-height:1.4}
+.res{width:150px;height:150px;margin-bottom:22px}
+.res circle{fill:none;stroke-width:6;stroke-linecap:round;stroke-dasharray:340;stroke-dashoffset:340;animation:dr .6s .1s ease forwards;transform-origin:center;transform:rotate(-90deg)}
+.res path{fill:none;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:90;stroke-dashoffset:90;animation:dr .45s .6s ease forwards}
+.res.ok circle,.res.ok path{stroke:var(--ok)}.res.no circle,.res.no path{stroke:var(--no)}
+.res.pop{animation:pop .5s .9s ease}
+@keyframes dr{to{stroke-dashoffset:0}}
+@keyframes pop{50%{transform:scale(1.1)}}
+.rc{width:100%;border:1px dashed var(--line);border-radius:18px;padding:14px 16px;margin-top:22px;font-size:14px}
+.rc div{display:flex;justify-content:space-between;padding:4px 0}.rc span:first-child{color:var(--mute)}
+.vc{background:var(--fg);color:var(--bg);border-radius:24px;padding:22px;margin-bottom:16px}
+.vc small{opacity:.6;font-size:13px}.vc b{display:block;font-size:36px;letter-spacing:-1.2px;margin-top:4px}
+.toast{position:absolute;left:22px;right:22px;bottom:24px;background:var(--fg);color:var(--bg);padding:14px 16px;border-radius:16px;font-size:14px;opacity:0;transform:translateY(20px);transition:.3s;pointer-events:none;z-index:9}
+.toast.on{opacity:1;transform:none}
+.dots{display:flex;gap:14px;justify-content:center;margin:26px 0 8px}.dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--fg);transition:.15s}.dots i.f{background:var(--fg);transform:scale(1.1)}.dots.shake{animation:sh .4s}@keyframes sh{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.pk{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:auto}
+.hl{overflow:auto;flex:1}.hr{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}.hr small{display:block;color:var(--mute);margin-top:3px;font-size:12px}
+.cr{background:var(--fg);color:var(--bg);border-radius:24px;padding:20px 22px;margin:6px 0 16px}.cr small{opacity:.6;font-size:13px}.cr b{display:block;font-size:34px;letter-spacing:-1px;margin:4px 0}
+</style>
+</head>
+<body>
+<div id="app">
+
+<section class="scr on" id="home">
+  <div class="top"><span class="brand">● cep pos</span><span style="display:flex;gap:8px;align-items:center"><span class="pill" id="nfcState">NFC</span><button class="pill" id="lockBtn" style="background:none;color:var(--fg);cursor:pointer">🔒 Kilitle</button></span></div>
+  <div class="cr"><small>Bugünkü ciro · Terminal T-01</small><b id="ciro">0,00 ₺</b><small id="ciroN">0 satış</small></div>
+  <div class="grid g2">
+    <button class="big" data-go="cats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg><span>Ödeme<br><small>Satış al</small></span></button>
+    <button class="big alt" id="refundBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg><span>İade<br><small>Para iade et</small></span></button>
+  </div>
+  <button class="link" data-go="hist" style="margin-top:12px"><span>İşlem geçmişi</span><span>→</span></button><button class="link" data-go="wallet" style="margin-top:10px"><span>Kart yükle (sahte bakiye)</span><span>→</span></button>
+  <p class="sub" style="margin:16px 0 0;font-size:12px;text-align:center">Oyun amaçlıdır. Gerçek bir bankacılık uygulaması değildir.</p>
+</section>
+
+<section class="scr" id="cats">
+  <div class="top"><button class="back" data-back>←</button><span class="pill">Ödeme</span></div>
+  <h1>Kategori</h1><p class="sub">Satış türünü seç.</p>
+  <div class="grid g2">
+    <button class="big alt cat" data-cat="Fırın"><span style="font-size:34px">🥖</span>Fırın</button>
+    <button class="big alt cat" data-cat="Market"><span style="font-size:34px">🛒</span>Market</button>
+    <button class="big alt cat" data-cat="Tekel"><span style="font-size:34px">🍺</span>Tekel</button>
+    <button class="big alt cat" data-cat="Diğer"><span style="font-size:34px">✦</span>Diğer</button>
+  </div>
+</section>
+
+<section class="scr" id="amount">
+  <div class="top"><button class="back" data-back>←</button><span class="pill" id="amtTag">Ödeme</span></div>
+  <div class="amt"><div class="lbl" id="amtLbl">Tutarı gir</div><div class="v"><b id="amtV">0,00</b><span>₺</span></div></div>
+  <div class="keys" id="keys"></div>
+  <button class="cta" id="amtGo" disabled>Devam</button>
+</section>
+
+<section class="scr" id="scan">
+  <div class="top"><button class="back" id="scanBack">←</button><span class="pill" id="scanAmt"></span></div>
+  <div class="center">
+    <div class="nfc"><i></i><i></i><i></i><div class="phone"><div class="cardi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 010 8M10 5a10 10 0 010 14M14 2a14 14 0 010 20" transform="scale(.9) translate(1 1)"/></svg></div></div></div>
+    <p class="t1" id="scanT">Kartı okut</p>
+    <p class="t2" id="scanS">Kartı telefonun arkasına yaklaştır.</p>
+  </div>
+  <button class="cta ghost" id="virtBtn">Sanal kartı okut (demo)</button>
+</section>
+
+<section class="scr" id="busy">
+  <div class="center"><div class="spin"></div><p class="t1" id="busyT">Ödeme alınıyor</p><p class="t2">Lütfen kartı çekmeyin…</p></div>
+</section>
+
+<section class="scr" id="result">
+  <div class="center">
+    <svg class="res" id="resSvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54"/><path id="resP" d=""/></svg>
+    <p class="t1" id="resT"></p><p class="t2" id="resS"></p>
+    <div class="rc" id="rc"></div>
+  </div>
+  <button class="cta" id="resDone">Tamam</button>
+</section>
+
+<section class="scr" id="wallet">
+  <div class="top"><button class="back" data-back>←</button><span class="pill">Kart yükle</span></div>
+  <h1>Kartım</h1><p class="sub">Telefondaki sanal karta ya da NFC etiketine sahte bakiye yükle.</p>
+  <div class="vc"><small>Sanal kart bakiyesi</small><b id="vBal">0,00 ₺</b></div>
+  <button class="cta" id="loadVirt">Sanal karta yükle</button>
+  <button class="cta ghost" id="loadNfc">NFC kartına yükle</button>
+  <button class="cta ghost" id="resetV">Sanal kartı sıfırla</button>
+</section>
+
+<section class="scr" id="lock"><div class="top"><span class="brand">● cep pos</span><span class="pill">Güvenli giriş</span></div><div style="text-align:center;margin-top:30px"><h1 id="lkT"></h1><p class="sub" id="lkS" style="margin-bottom:0"></p><div class="dots" id="dots"></div></div><div id="pk" class="pk"></div><button class="cta ghost" id="lkForgot">PIN'i unuttum</button></section>
+<section class="scr" id="hist"><div class="top"><button class="back" data-back>←</button><span class="pill">İşlemler</span></div><h1>Geçmiş</h1><div class="hl" id="hl"></div></section>
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var st={mode:'pay',cat:'',digits:'',after:null,stack:['home'],ctrl:null};
+var KEY='cepposVirt';
+function getV(){try{return parseInt(localStorage.getItem(KEY)||'50000',10)||0}catch(e){return window.__v!=null?window.__v:50000}}
+function setV(v){try{localStorage.setItem(KEY,String(v))}catch(e){window.__v=v}}
+function fmt(k){return (k/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function toast(m){var t=$('toast');t.textContent=m;t.className='toast on';clearTimeout(toast.t);toast.t=setTimeout(function(){t.className='toast'},2800)}
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+var AC;function beep(f,d){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+function show(id,push){var c=document.querySelector('.scr.on');if(c)c.classList.remove('on');$(id).classList.add('on');if(push!==false)st.stack.push(id);if(id==='wallet')$('vBal').textContent=fmt(getV())+' ₺';if(id==='home')renderHome();if(id==='hist')renderHist()}
+function back(){if(st.ctrl){try{st.ctrl.abort()}catch(e){}st.ctrl=null}st.stack.pop();show(st.stack[st.stack.length-1]||'home',false)}
+function home(){st.stack=['home'];show('home',false)}
+var NFC=null;
+try{if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())NFC=Capacitor.registerPlugin('Nfc')}catch(e){}
+var hasNFC=!!NFC||('NDEFReader' in window);
+if(NFC){
+ NFC.addListener('tag',function(t){if(!$('scan').classList.contains('on'))return;process({type:'nfc',bal:t.balance||0,found:!!t.found})});
+ try{var AP=Capacitor.registerPlugin('App');AP.addListener('backButton',function(){var s=st.stack[st.stack.length-1];if(s==='busy')return;if(s==='home'||s==='lock')AP.exitApp();else if(s==='result')home();else back()})}catch(e){}
+}
+function stopNfc(){try{if(NFC)NFC.stop()}catch(e){}}
+function nativeScan(){
+ st.ctrl={abort:stopNfc};
+ NFC.start().catch(function(e){var m=(e&&e.message)||'';$('scanS').textContent=m.indexOf('KAPALI')>-1?'NFC kapalı. Ayarlardan NFC\'yi aç.':'NFC başlatılamadı.';toast('NFC açılamadı')});
+}
+$('nfcState').textContent=hasNFC?'NFC hazır':'NFC yok · demo';
+
+document.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){show(b.dataset.go)}});
+document.querySelectorAll('[data-back]').forEach(function(b){b.onclick=back});
+$('scanBack').onclick=back;
+document.querySelectorAll('[data-cat]').forEach(function(b){b.onclick=function(){st.mode='pay';st.cat=b.dataset.cat;openAmt('Ödeme · '+st.cat,'Tutarı gir',function(){startScan()})}});
+$('refundBtn').onclick=function(){st.mode='refund';st.cat='';openAmt('İade','İade tutarı',function(){startScan()})};
+$('loadVirt').onclick=function(){st.mode='loadV';openAmt('Sanal kart','Yüklenecek tutar',function(a){setV(getV()+a);toast(fmt(a)+' ₺ sanal karta yüklendi');vib(40);back();$('vBal').textContent=fmt(getV())+' ₺'},true)};
+$('loadNfc').onclick=function(){st.mode='loadN';openAmt('NFC kart','Yüklenecek tutar',function(){startScan()})};
+$('resetV').onclick=function(){setV(50000);$('vBal').textContent=fmt(getV())+' ₺';toast('Sanal kart 500,00 ₺ oldu')};
+$('resDone').onclick=home;
+
+/* keypad */
+var kk=['1','2','3','4','5','6','7','8','9','C','0','⌫'],kh='';
+kk.forEach(function(k){kh+='<button class="key" data-k="'+k+'">'+k+'</button>'});$('keys').innerHTML=kh;
+function amt(){return parseInt(st.digits||'0',10)}
+function upd(){$('amtV').textContent=fmt(amt());$('amtGo').disabled=amt()<=0}
+$('keys').onclick=function(e){var k=e.target.dataset&&e.target.dataset.k;if(!k)return;vib(8);
+ if(k==='C')st.digits='';else if(k==='⌫')st.digits=st.digits.slice(0,-1);else if(st.digits.length<8)st.digits=(st.digits+k).replace(/^0+/,'');upd()};
+function openAmt(tag,lbl,cb,direct){st.digits='';st.after=cb;st.direct=!!direct;$('amtTag').textContent=tag;$('amtLbl').textContent=lbl;upd();show('amount')}
+$('amtGo').onclick=function(){if(amt()>0)st.after(amt())};
+
+/* scan */
+var verbs={pay:'Ödeme alınıyor',refund:'İade yapılıyor',loadN:'Karta yükleniyor'};
+function startScan(){
+ st.amount=amt();
+ $('scanAmt').textContent=fmt(st.amount)+' ₺';
+ $('scanT').textContent=st.mode==='loadN'?'Kartı telefona yaklaştır':'Kartı okut';
+ $('scanS').textContent=hasNFC?'Kartı telefonun arkasına yaklaştır.':'Bu tarayıcıda NFC yok. Aşağıdaki demo kartı kullan (Android Chrome ile aç).';
+ $('virtBtn').style.display=st.mode==='loadN'?'none':'';
+ show('scan');
+ if(!hasNFC){return}if(NFC){nativeScan();return}
+ try{
+  var r=new NDEFReader();st.ctrl=new AbortController();
+  r.scan({signal:st.ctrl.signal}).then(function(){
+   r.onreadingerror=function(){toast('Kart okunamadı, tekrar dene')};
+   r.onreading=function(ev){
+    if(!$('scan').classList.contains('on'))return;
+    var bal=0,found=false;
+    try{ev.message.records.forEach(function(rec){if(rec.recordType==='text'){var t=new TextDecoder(rec.encoding||'utf-8').decode(rec.data);if(t.indexOf('CEPPOS:')===0){bal=parseInt(t.slice(7),10)||0;found=true}}})}catch(e){}
+    try{st.ctrl.abort()}catch(e){};st.ctrl=null;
+    process({type:'nfc',bal:bal,found:found})};
+  }).catch(function(e){$('scanS').textContent='NFC açılamadı. Ayarlardan NFC\'yi aç ve izin ver.';toast('NFC hatası: '+(e.name||'bilinmiyor'))});
+ }catch(e){$('scanS').textContent='NFC başlatılamadı.'}
+}
+$('virtBtn').onclick=function(){process({type:'virt',bal:getV(),found:true})};
+
+function writeNfc(bal){
+ if(NFC)return NFC.write({balance:bal});
+ return new NDEFReader().write({records:[{recordType:'text',data:'CEPPOS:'+bal}]},{overwrite:true})
+}
+function process(c){
+ if(st.ctrl&&!NFC){try{st.ctrl.abort()}catch(e){}}
+ st.ctrl=null;
+ beep(880,.12);vib(60);
+ $('busyT').textContent=verbs[st.mode];show('busy');
+ var a=st.amount,nb=c.bal,ok=true,why='',note='';
+ if(st.mode==='pay'){
+  if(!c.found&&c.type==='nfc'){ok=false;why='Kartta bakiye bulunamadı. Önce "Kart yükle" ile bakiye yükle.'}
+  else if(c.bal<a){ok=false;why='Yetersiz bakiye. Kart bakiyesi '+fmt(c.bal)+' ₺'}
+  else nb=c.bal-a;
+ }else nb=c.bal+a;
+ var wp=Promise.resolve();
+ if(ok&&c.type==='virt')setV(nb);
+ else if(ok)wp=writeNfc(nb).catch(function(){ok=false;why='Kart güncellenemedi. Kartı telefonun arkasında sabit tut ve tekrar dene.'});
+ setTimeout(function(){wp.then(function(){result(ok,a,nb,why,note,c)})},1900);
+}
+function result(ok,a,nb,why,note,c){stopNfc();
+ var svg=$('resSvg');svg.setAttribute('class','res pop '+(ok?'ok':'no'));
+ $('resP').setAttribute('d',ok?'M38 62l15 15 30-32':'M42 42l36 36M78 42L42 78');
+ $('resP').style.animation='none';svg.querySelector('circle').style.animation='none';void svg.offsetWidth;$('resP').style.animation='';svg.querySelector('circle').style.animation='';
+ var okT={pay:'Ödeme onaylandı',refund:'İade tamamlandı',loadN:'Bakiye yüklendi'};
+ $('resT').textContent=ok?okT[st.mode]:(st.mode==='loadN'?'Yükleme başarısız':'Ödeme reddedildi');
+ $('resS').textContent=ok?(note||'İşlem başarıyla tamamlandı.'):why;
+ var d=new Date(),ref=Math.floor(100000+Math.random()*899999);
+ var rows=[['Tutar',fmt(a)+' ₺'],st.cat?['Kategori',st.cat]:null,['Kart',c.type==='virt'?'Sanal kart':'NFC kart'],ok?['Kalan bakiye',fmt(nb)+' ₺']:null,['Tarih',d.toLocaleDateString('tr-TR')+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})],['Ref',''+ref]].filter(Boolean);
+ $('rc').innerHTML=rows.map(function(r){return '<div><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'}).join('');
+ var hh0=getH();hh0.unshift({m:st.mode,c:st.cat,a:a,ok:ok,ty:c.type,t:Date.now()});ls('cepposH',JSON.stringify(hh0.slice(0,40)));
+ if(ok){beep(1100,.1);setTimeout(function(){beep(1500,.18)},120);vib([40,40,40])}else{beep(220,.35);vib([200,80,200])}
+ show('result');
+}
+var mem={},PK='cepposPin';
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){if(v===undefined)return mem[k]||null;mem[k]=v}}
+function hh(s){var h=5381;s='cp'+s;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return ''+h}
+function getH(){try{return JSON.parse(ls('cepposH')||'[]')}catch(e){return[]}}
+function renderHome(){var d=new Date().toDateString(),s=0,n=0;getH().forEach(function(x){if(new Date(x.t).toDateString()===d&&x.ok){if(x.m==='pay'){s+=x.a;n++}else if(x.m==='refund')s-=x.a}});$('ciro').textContent=fmt(s)+' ₺';$('ciroN').textContent=n+' satış'}
+function renderHist(){var L={pay:'Ödeme',refund:'İade',loadN:'Kart yükleme'},h=getH();$('hl').innerHTML=h.length?h.map(function(x){var d=new Date(x.t),neg=x.m==='pay'||x.m==='refund';var sg=!x.ok?'':(x.m==='refund'?'−':(x.m==='pay'?'+':'+'));return '<div class="hr"><div><b>'+L[x.m]+(x.c?' · '+x.c:'')+'</b><small>'+d.toLocaleDateString('tr-TR')+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})+' · '+(x.ok?'Onaylandı':'Reddedildi')+'</small></div><b style="color:'+(x.ok?'var(--fg)':'var(--no)')+'">'+sg+fmt(x.a)+' ₺</b></div>'}).join(''):'<p class="sub">Henüz işlem yok.</p>'}
+var lm,buf='',first='',tries=0,lk=0,hid=0,fg=0;
+var pkh='';['1','2','3','4','5','6','7','8','9'].forEach(function(k){pkh+='<button class="key" data-p="'+k+'">'+k+'</button>'});$('pk').innerHTML=pkh+'<span></span><button class="key" data-p="0">0</button><button class="key" data-p="⌫">⌫</button>';
+function lkText(){var m={setup:['PIN oluştur','Uygulamayı korumak için 6 haneli bir PIN belirle.'],confirm:['PIN\'i tekrarla','Aynı PIN\'i bir kez daha gir.'],login:['Hoş geldin','PIN\'ini girerek devam et.']};$('lkT').textContent=m[lm][0];$('lkS').textContent=m[lm][1];$('lkForgot').style.display=lm==='login'?'':'none';$('lkForgot').textContent='PIN\'i unuttum';fg=0}
+function dots(){$('dots').innerHTML=[0,1,2,3,4,5].map(function(i){return '<i class="'+(i<buf.length?'f':'')+'"></i>'}).join('')}
+function lkErr(msg){$('dots').classList.add('shake');vib([120,60,120]);beep(220,.25);$('lkS').textContent=msg;setTimeout(function(){$('dots').classList.remove('shake');buf='';dots()},450)}
+function lockInit(){if(st.ctrl){try{st.ctrl.abort()}catch(e){}st.ctrl=null}buf='';first='';lm=ls(PK)?'login':'setup';lkText();dots();st.stack=['lock'];show('lock',false)}
+function unlock(){buf='';home()}
+function lkDone(){
+ if(lm==='setup'){first=buf;buf='';lm='confirm';lkText();dots()}
+ else if(lm==='confirm'){if(buf===first){ls(PK,hh(buf));toast('PIN oluşturuldu');unlock()}else{lm='setup';first='';lkErr('PIN\'ler eşleşmedi. Baştan oluştur.');setTimeout(lkText,900)}}
+ else{if(hh(buf)===ls(PK)){tries=0;unlock()}else{tries++;if(tries>=5){tries=0;lk=Date.now()+30000;lkErr('Çok fazla deneme. 30 sn bekle.')}else lkErr('Hatalı PIN ('+tries+'/5)')}}
+}
+$('pk').onclick=function(e){var k=e.target.dataset&&e.target.dataset.p;if(!k)return;if(Date.now()<lk){toast('Lütfen biraz bekle');return}vib(8);if(k==='⌫')buf=buf.slice(0,-1);else if(buf.length<6)buf+=k;dots();if(buf.length===6)setTimeout(lkDone,120)};
+$('lkForgot').onclick=function(){if(!fg){fg=1;$('lkForgot').textContent='Tüm veriler silinecek. Onaylamak için tekrar dokun';return}ls(PK,null);ls('cepposH',null);ls(KEY,null);toast('Sıfırlandı. Yeni PIN oluştur.');lockInit()};
+$('lockBtn').onclick=lockInit;
+document.addEventListener('visibilitychange',function(){if(document.hidden)hid=Date.now();else if(hid&&Date.now()-hid>30000&&ls(PK)&&!$('lock').classList.contains('on'))lockInit()});
+lockInit();
+})();
+</script>
+</body>
+</html>

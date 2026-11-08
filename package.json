@@ -1,0 +1,10 @@
+{
+  "name": "cep-pos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "kur": "npm install @capacitor/core @capacitor/android @capacitor/app && npm install -D @capacitor/cli && npx cap add android && node setup.js && npx cap sync android",
+    "guncelle": "node setup.js && npx cap sync android",
+    "ac": "npx cap open android"
+  }
+}
