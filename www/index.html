@@ -131,7 +131,7 @@ p.sub{color:var(--mute);margin:0 0 22px;font-size:15px}
 
 <section class="scr" id="wallet">
   <div class="top"><button class="back" data-back>←</button><span class="pill">Kart yükle</span></div>
-  <h1>Kartım</h1><p class="sub">Telefondaki sanal karta ya da NFC etiketine sahte bakiye yükle.</p>
+  <h1>Kartım</h1><p class="sub">Sanal karta ya da herhangi bir NFC kartına sahte bakiye yükle. Bakiye telefonda tutulur, karta yazılmaz.</p>
   <div class="vc"><small>Sanal kart bakiyesi</small><b id="vBal">0,00 ₺</b></div>
   <button class="cta" id="loadVirt">Sanal karta yükle</button>
   <button class="cta ghost" id="loadNfc">NFC kartına yükle</button>
@@ -157,6 +157,11 @@ var AC;function beep(f,d){try{AC=AC||new (window.AudioContext||window.webkitAudi
 function show(id,push){var c=document.querySelector('.scr.on');if(c)c.classList.remove('on');$(id).classList.add('on');if(push!==false)st.stack.push(id);if(id==='wallet')$('vBal').textContent=fmt(getV())+' ₺';if(id==='home')renderHome();if(id==='hist')renderHist()}
 function back(){if(st.ctrl){try{st.ctrl.abort()}catch(e){}st.ctrl=null}st.stack.pop();show(st.stack[st.stack.length-1]||'home',false)}
 function home(){st.stack=['home'];show('home',false)}
+function cardsGet(){try{return JSON.parse(ls('cepposCards')||'{}')}catch(e){return {}}}
+function cardKey(id){id=(id||'').toUpperCase().replace(/[^0-9A-F]/g,'');return(id.length===8&&id.slice(0,2)==='08')?'RANDOM':id}
+function cardBal(id){var v=cardsGet()[cardKey(id)];return v==null?0:v}
+function cardKnown(id){return cardsGet()[cardKey(id)]!=null}
+function setCard(id,b){var c=cardsGet();c[cardKey(id)]=b;ls('cepposCards',JSON.stringify(c))}
 var NFC=null;
 function getPlugin(n){
  var C=window.Capacitor;if(!C)return null;
@@ -174,7 +179,7 @@ function getPlugin(n){
 NFC=getPlugin('Nfc');
 var hasNFC=!!NFC||('NDEFReader' in window);
 if(NFC){
- NFC.addListener('tag',function(t){if(!$('scan').classList.contains('on'))return;process({type:'nfc',bal:t.balance||0,found:!!t.found})});
+ NFC.addListener('tag',function(t){if(!$('scan').classList.contains('on'))return;process({type:'nfc',id:t.id||'',bal:cardBal(t.id),found:cardKnown(t.id)})});
  try{var AP=getPlugin('App');AP.addListener('backButton',function(){var s=st.stack[st.stack.length-1];if(s==='busy')return;if(s==='home'||s==='lock')AP.exitApp();else if(s==='result')home();else back()})}catch(e){}
 }
 function stopNfc(){try{if(NFC)NFC.stop()}catch(e){}}
@@ -218,12 +223,7 @@ function startScan(){
   var r=new NDEFReader();st.ctrl=new AbortController();
   r.scan({signal:st.ctrl.signal}).then(function(){
    r.onreadingerror=function(){toast('Kart okunamadı, tekrar dene')};
-   r.onreading=function(ev){
-    if(!$('scan').classList.contains('on'))return;
-    var bal=0,found=false;
-    try{ev.message.records.forEach(function(rec){if(rec.recordType==='text'){var t=new TextDecoder(rec.encoding||'utf-8').decode(rec.data);if(t.indexOf('CEPPOS:')===0){bal=parseInt(t.slice(7),10)||0;found=true}}})}catch(e){}
-    try{st.ctrl.abort()}catch(e){};st.ctrl=null;
-    process({type:'nfc',bal:bal,found:found})};
+   r.onreading=function(ev){if(!$('scan').classList.contains('on'))return;var id=(ev.serialNumber||'').replace(/:/g,'').toUpperCase();try{st.ctrl.abort()}catch(e){};st.ctrl=null;process({type:'nfc',id:id,bal:cardBal(id),found:cardKnown(id)})};
   }).catch(function(e){$('scanS').textContent='Web NFC reddedildi. Capacitor: '+(window.Capacitor?'var, nativePromise: '+typeof Capacitor.nativePromise+', registerPlugin: '+typeof Capacitor.registerPlugin:'YOK');toast('NFC hatası: '+(e.name||'bilinmiyor'))});
  }catch(e){$('scanS').textContent='NFC başlatılamadı.'}
 }
@@ -240,13 +240,12 @@ function process(c){
  $('busyT').textContent=verbs[st.mode];show('busy');
  var a=st.amount,nb=c.bal,ok=true,why='',note='';
  if(st.mode==='pay'){
-  if(!c.found&&c.type==='nfc'){ok=false;why='Kartta bakiye bulunamadı. Önce "Kart yükle" ile bakiye yükle.'}
+  if(!c.found&&c.type==='nfc'){ok=false;why='Bu karta henüz bakiye yüklenmemiş. Önce "Kart yükle" ile bakiye yükle.'}
   else if(c.bal<a){ok=false;why='Yetersiz bakiye. Kart bakiyesi '+fmt(c.bal)+' ₺'}
   else nb=c.bal-a;
  }else nb=c.bal+a;
  var wp=Promise.resolve();
- if(ok&&c.type==='virt')setV(nb);
- else if(ok)wp=writeNfc(nb).catch(function(){ok=false;why='Kart güncellenemedi. Kartı telefonun arkasında sabit tut ve tekrar dene.'});
+ if(ok){if(c.type==='virt')setV(nb);else setCard(c.id,nb)}
  setTimeout(function(){wp.then(function(){result(ok,a,nb,why,note,c)})},1900);
 }
 function result(ok,a,nb,why,note,c){stopNfc();
@@ -257,7 +256,7 @@ function result(ok,a,nb,why,note,c){stopNfc();
  $('resT').textContent=ok?okT[st.mode]:(st.mode==='loadN'?'Yükleme başarısız':'Ödeme reddedildi');
  $('resS').textContent=ok?(note||'İşlem başarıyla tamamlandı.'):why;
  var d=new Date(),ref=Math.floor(100000+Math.random()*899999);
- var rows=[['Tutar',fmt(a)+' ₺'],st.cat?['Kategori',st.cat]:null,['Kart',c.type==='virt'?'Sanal kart':'NFC kart'],ok?['Kalan bakiye',fmt(nb)+' ₺']:null,['Tarih',d.toLocaleDateString('tr-TR')+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})],['Ref',''+ref]].filter(Boolean);
+ var rows=[['Tutar',fmt(a)+' ₺'],st.cat?['Kategori',st.cat]:null,['Kart',c.type==='virt'?'Sanal kart':(cardKey(c.id)==='RANDOM'?'Temassız kart (ortak bakiye)':'NFC kart ···'+(c.id||'').slice(-4))],ok?['Kalan bakiye',fmt(nb)+' ₺']:null,['Tarih',d.toLocaleDateString('tr-TR')+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})],['Ref',''+ref]].filter(Boolean);
  $('rc').innerHTML=rows.map(function(r){return '<div><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'}).join('');
  var hh0=getH();hh0.unshift({m:st.mode,c:st.cat,a:a,ok:ok,ty:c.type,t:Date.now()});ls('cepposH',JSON.stringify(hh0.slice(0,40)));
  if(ok){beep(1100,.1);setTimeout(function(){beep(1500,.18)},120);vib([40,40,40])}else{beep(220,.35);vib([200,80,200])}
